@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dokuwiki
+  labels:
+    app: dokuwiki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dokuwiki
+  template:
+    metadata:
+      labels:
+        app: dokuwiki
+    spec:
+      containers:
+        - image: php:7.4-apache
+          name: dokuwiki
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: dokuwiki-persistent-storage
+              mountPath: /var/www/html
+      volumes:
+        - name: dokuwiki-persistent-storage
+          persistentVolumeClaim:
+            claimName: dokuwiki-volumeclaim
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: dokuwiki-volumeclaim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: dokuwiki
+  name: dokuwiki
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app: dokuwiki
+---
